@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "name": "typesafe-rest",
+  "version": "0.1.0",
+  "description": "",
+  "workspaces": [
+    "packages/*"
+  ]
+}
