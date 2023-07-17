@@ -3,6 +3,8 @@ import { z } from "zod";
 type RouteDefaults = {
   path: string;
   responses: Record<number, z.ZodTypeAny>;
+  headers?: z.AnyZodObject;
+  meta?: unknown;
 };
 
 export type GetRoute = {

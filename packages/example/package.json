@@ -1,0 +1,10 @@
+{
+  "name": "@typesafe-rest/example",
+  "version": "0.1.0",
+  "dependencies": {
+    "@typesafe-rest/core": "*",
+    "@typesafe-rest/client": "*",
+    "typescript": "5.1.6",
+    "zod": "3.21.4"
+  }
+}

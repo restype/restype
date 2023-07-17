@@ -1,6 +1,7 @@
 {
   "name": "@typesafe-rest/core",
   "version": "0.1.0",
+  "main": "./src/index.ts",
   "dependencies": {
     "typescript": "5.1.6",
     "zod": "3.21.4"
