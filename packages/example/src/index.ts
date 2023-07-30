@@ -3,6 +3,22 @@ import { createContract, createRouter } from "@typesafe-rest/core";
 import { createClient } from "@typesafe-rest/client";
 
 const contract = createContract({
+  getPosts: {
+    method: "GET",
+    path: "/posts/",
+    responses: {
+      201: z.object({
+        postName: z.string(),
+      }),
+      400: z.string(),
+    },
+    query: z.object({
+      limit: z.string().transform(Number),
+    }),
+    headers: z.object({
+      "x-limit": z.string().transform(Number),
+    }),
+  },
   getTodo: {
     method: "GET",
     path: "/task/:id",
@@ -21,6 +37,14 @@ const contract = createContract({
       204: z.string(),
     },
   },
+  createTodoInProject: {
+    method: "POST",
+    path: "/project/:projectId/task/",
+    body: z.object({ taskName: z.string() }),
+    responses: {
+      201: z.string(),
+    },
+  },
 });
 
 const createContext = async () => {
@@ -32,9 +56,15 @@ const createContext = async () => {
 };
 
 const router = createRouter(contract, createContext, {
+  getPosts: async ({ headers }) => {
+    if (headers["x-limit"] === 0) {
+      return { status: 400 as const, body: "x-limit" };
+    }
+
+    return { status: 201 as const, body: { postName: "xxx" } };
+  },
   getTodo: async ({
     params: { id },
-    headers,
     ctx: {
       session: { userId },
     },
@@ -64,7 +94,34 @@ const router = createRouter(contract, createContext, {
       body: "asdf",
     };
   },
+  createTodoInProject: async ({ params, body }) => {
+    return { status: 201 as const, body: "asdf" };
+  },
 });
 
-const client = createClient(contract);
-const { data } = client.createTodo();
+const client = createClient(contract, {
+  baseUrl: "http://localhost:300/",
+  baseHeaders: {
+    Authorization: "Bearer TOKEN",
+    "X-API-Version": "2022-11-01",
+  },
+});
+
+const { data: posts } = client.getPosts.useQuery({
+  query: { limit: 10 },
+  headers: { "x-limit": 10 },
+});
+posts?.postName;
+
+const { data: todo } = client.getTodo.useQuery({
+  params: { id: "1" },
+  refetchInterval: 100,
+});
+todo?.title;
+
+const {} = client.getTodo.useQuery({
+  params: { id: "1" },
+});
+
+const mutation = client.createTodo.useMutation({ onSuccess: () => {} });
+mutation.mutate({ n: 123 });

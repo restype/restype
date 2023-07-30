@@ -6,7 +6,9 @@ import type {
   Contract,
   PutRoute,
   DeleteRoute,
+  PatchRoute,
 } from "./contract";
+import { Prettify } from "./type-utils";
 
 type ParseParams<T extends string> =
   T extends `${string}:${infer Param}/${infer Rest}`
@@ -21,14 +23,17 @@ type Params<T extends string> = ParseParams<T> extends infer U
   ? { [key in keyof U]: U[key] }
   : never;
 
-type CreateRouteArgs<T extends Route, Context> = {
-  ctx: Context;
-  headers: T["headers"];
-} & (T extends GetRoute
-  ? { params: Params<T["path"]> }
-  : T extends PostRoute | PutRoute | DeleteRoute
-  ? { body: z.infer<T["body"]> }
-  : never);
+type CreateRouteArgs<T extends Route, Context> = Prettify<
+  {
+    ctx: Context;
+    headers: T["headers"] extends z.AnyZodObject
+      ? z.infer<T["headers"]>
+      : never;
+    params: Params<T["path"]>;
+  } & (T extends PostRoute | PutRoute | PatchRoute | DeleteRoute
+    ? { body: z.infer<T["body"]> }
+    : {})
+>;
 
 export function createRouter<
   const T extends Contract,

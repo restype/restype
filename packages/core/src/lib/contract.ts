@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { HttpStatusCode } from "./status-codes";
 
 type RouteDefaults = {
   path: string;
@@ -9,6 +10,7 @@ type RouteDefaults = {
 
 export type GetRoute = {
   method: "GET";
+  query?: z.AnyZodObject;
 } & RouteDefaults;
 
 export type PostRoute = {
@@ -21,12 +23,17 @@ export type PutRoute = {
   body: z.AnyZodObject;
 } & RouteDefaults;
 
+export type PatchRoute = {
+  method: "PATCH";
+  body: z.AnyZodObject;
+} & RouteDefaults;
+
 export type DeleteRoute = {
   method: "DELETE";
   body: z.AnyZodObject;
 } & RouteDefaults;
 
-export type Route = GetRoute | PostRoute | PutRoute | DeleteRoute;
+export type Route = GetRoute | PostRoute | PutRoute | PatchRoute | DeleteRoute;
 
 export type Contract = { [key: string]: Route };
 
