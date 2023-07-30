@@ -3,6 +3,15 @@ import { createContract, createRouter } from "@typesafe-rest/core";
 import { createClient } from "@typesafe-rest/client";
 
 const contract = createContract({
+  test: {
+    getTest: {
+      method: "GET",
+      path: "/test/:tid",
+      responses: {
+        200: z.string(),
+      },
+    },
+  },
   getPosts: {
     method: "GET",
     path: "/posts/",
@@ -59,6 +68,14 @@ const createContext = async () => {
 };
 
 const router = createRouter(contract, createContext, {
+  test: {
+    getTest: async ({ params }) => {
+      return {
+        status: 200 as const,
+        body: "test ok",
+      };
+    },
+  },
   getPosts: async ({ headers }) => {
     if (headers["x-limit"] === 0) {
       return { status: 400 as const, body: "x-limit" };
@@ -107,6 +124,10 @@ const client = createClient(contract, {
     Authorization: "Bearer TOKEN",
     "X-API-Version": "2022-11-01",
   },
+});
+
+const a = client.test.getTest.useQuery({
+  params: { tid: "123" },
 });
 
 const posts = client.getPosts.useQuery({

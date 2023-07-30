@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { HttpStatusCode } from "./status-codes";
 
 type RouteDefaults = {
   path: string;
@@ -35,7 +34,7 @@ export type DeleteRoute = {
 
 export type Route = GetRoute | PostRoute | PutRoute | PatchRoute | DeleteRoute;
 
-export type Contract = { [key: string]: Route };
+export type Contract = { [key: string]: Route | Contract };
 
 export function createContract<const T extends Contract>(contract: T): T {
   return contract;

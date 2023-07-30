@@ -15,7 +15,6 @@ import type {
   PutRoute,
   PatchRoute,
   DeleteRoute,
-  Without,
   Prettify,
   SuccessfulHttpStatusCode,
   ErrorHttpStatusCode,
@@ -23,7 +22,7 @@ import type {
 } from "@typesafe-rest/core";
 import { createFetcher } from "./fetcher";
 
-type ClientResponse<T extends Route> = Prettify<
+type RouteResponse<T extends Route> = Prettify<
   {
     [keyResponse in keyof T["responses"] & SuccessfulHttpStatusCode]: z.infer<
       T["responses"][keyResponse]
@@ -31,7 +30,7 @@ type ClientResponse<T extends Route> = Prettify<
   }[keyof T["responses"] & SuccessfulHttpStatusCode]
 >;
 
-type ClientError<T extends Route> = Prettify<
+type RouteError<T extends Route> = Prettify<
   {
     [keyResponse in keyof T["responses"] & ErrorHttpStatusCode]: {
       status: keyResponse;
@@ -61,15 +60,41 @@ type Headers<T extends Route> = T["headers"] extends z.AnyZodObject
   ? z.infer<T["headers"]>
   : never;
 
-export function createClient<T extends Contract>(
-  contract: T,
-  {
-    baseUrl,
-    baseHeaders,
-  }: { baseUrl?: string; baseHeaders?: Record<string, string> }
-) {
-  const fetcher = createFetcher({ baseUrl, baseHeaders });
+type QueryClient<T extends Contract> = {
+  [key in keyof T]: T[key] extends GetRoute
+    ? {
+        useQuery: (
+          options: Omit<UseQueryOptions, "queryFn" | "queryKey"> &
+            WithoutNever<{
+              params: Params<T[key]["path"]>;
+              query: Query<T[key]>;
+              headers: Headers<T[key]>;
+            }>
+        ) => UseQueryResult<RouteResponse<T[key]>, RouteError<T[key]>>;
+      }
+    : T[key] extends PostRoute | PutRoute | PatchRoute | DeleteRoute
+    ? {
+        useMutation: (
+          options: Omit<UseMutationOptions, "mutationFn"> &
+            WithoutNever<{
+              params: Params<T[key]["path"]>;
+              headers: Headers<T[key]>;
+            }>
+        ) => UseMutationResult<
+          RouteResponse<T[key]>,
+          RouteError<T[key]>,
+          z.infer<T[key]["body"]>
+        >;
+      }
+    : T[key] extends Contract
+    ? QueryClient<T[key]>
+    : never;
+};
 
+function createQueries<T extends Contract>(
+  contract: T,
+  fetcher: ReturnType<typeof createFetcher>
+): QueryClient<T> {
   return Object.fromEntries(
     Object.entries(contract).map(([key, route]) => {
       if (route.method === "GET") {
@@ -94,55 +119,47 @@ export function createClient<T extends Contract>(
             },
           },
         ];
-      }
+      } else if (
+        route.method === "POST" ||
+        route.method === "PUT" ||
+        route.method === "PATCH" ||
+        route.method === "DELETE"
+      ) {
+        return [
+          key,
+          {
+            useMutation: (options) => {
+              const { params, headers } = options as any;
 
-      return [
-        key,
-        {
-          useMutation: (options) => {
-            const { params, headers } = options as any;
-
-            return useMutation({
-              mutationFn: (body) => {
-                return fetcher({
-                  route,
-                  params,
-                  headers,
-                  body: JSON.stringify(body),
-                });
-              },
-              ...options,
-            });
+              return useMutation({
+                mutationFn: (body) => {
+                  return fetcher({
+                    route,
+                    params,
+                    headers,
+                    body: JSON.stringify(body),
+                  });
+                },
+                ...options,
+              });
+            },
           },
-        },
-      ];
+        ];
+      } else {
+        return [key, createQueries(route, fetcher)];
+      }
     })
-  ) as {
-    [key in keyof T]: T[key] extends GetRoute
-      ? {
-          useQuery: (
-            options: Omit<UseQueryOptions, "queryFn" | "queryKey"> &
-              WithoutNever<{
-                params: Params<T[key]["path"]>;
-                query: Query<T[key]>;
-                headers: Headers<T[key]>;
-              }>
-          ) => UseQueryResult<ClientResponse<T[key]>, ClientError<T[key]>>;
-        }
-      : T[key] extends PostRoute | PutRoute | PatchRoute | DeleteRoute
-      ? {
-          useMutation: (
-            options: Omit<UseMutationOptions, "mutationFn"> &
-              WithoutNever<{
-                params: Params<T[key]["path"]>;
-                headers: Headers<T[key]>;
-              }>
-          ) => UseMutationResult<
-            ClientResponse<T[key]>,
-            ClientError<T[key]>,
-            z.infer<T[key]["body"]>
-          >;
-        }
-      : never;
-  };
+  );
+}
+
+export function createClient<T extends Contract>(
+  contract: T,
+  {
+    baseUrl,
+    baseHeaders,
+  }: { baseUrl?: string; baseHeaders?: Record<string, string> }
+): QueryClient<T> {
+  const fetcher = createFetcher({ baseUrl, baseHeaders });
+
+  return createQueries(contract, fetcher);
 }
