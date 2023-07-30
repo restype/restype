@@ -51,7 +51,7 @@ const contract = createContract({
   },
   createTodoInProject: {
     method: "POST",
-    path: "/project/:projectId/task/",
+    path: "/project/:projectId/task/:tid/",
     body: z.object({ taskName: z.string() }),
     responses: {
       201: z.string(),
@@ -76,8 +76,8 @@ const router = createRouter(contract, createContext, {
       };
     },
   },
-  getPosts: async ({ headers }) => {
-    if (headers["x-limit"] === 0) {
+  getPosts: async ({ headers, query }) => {
+    if (headers["x-limit"] === 0 || query.limit === 0) {
       return { status: 400 as const, body: "x-limit" };
     }
 
@@ -155,4 +155,10 @@ const {} = client.getTodo.useQuery({
 });
 
 const mutation = client.createTodo.useMutation({ onSuccess: () => {} });
-mutation.mutate({ n: 123 });
+mutation.mutate({ body: { n: 123 } });
+
+const m = client.createTodoInProject.useMutation({});
+m.mutate({
+  body: { taskName: "asd" },
+  params: { projectId: "pid", tid: "tttiiid" },
+});

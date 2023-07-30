@@ -1,33 +1,19 @@
 import { z } from "zod";
 import type {
   Route,
-  PostRoute,
   Contract,
-  PutRoute,
-  DeleteRoute,
-  PatchRoute,
+  RouteHeaders,
+  RouteQuery,
+  RouteBody,
+  RouteParams,
 } from "./contract";
-
-type ParseParams<T extends string> =
-  T extends `${string}:${infer Param}/${infer Rest}`
-    ? { [key in Param]: string } & ParseParams<Rest>
-    : T extends `${string}:${infer Param}`
-    ? { [key in Param]: string }
-    : T extends `${string}/${infer Rest}`
-    ? ParseParams<Rest>
-    : {};
-
-type Params<T extends string> = ParseParams<T> extends infer U
-  ? { [key in keyof U]: U[key] }
-  : never;
 
 type RouteArgs<T extends Route, Context> = {
   ctx: Context;
-  headers: T["headers"] extends z.AnyZodObject ? z.infer<T["headers"]> : never;
-  params: Params<T["path"]>;
-  body: T extends PostRoute | PutRoute | PatchRoute | DeleteRoute
-    ? z.infer<T["body"]>
-    : never;
+  query: RouteQuery<T>;
+  headers: RouteHeaders<T>;
+  params: RouteParams<T>;
+  body: RouteBody<T>;
 };
 
 type Router<T extends Contract, Context> = {

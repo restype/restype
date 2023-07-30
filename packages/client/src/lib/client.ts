@@ -19,6 +19,10 @@ import type {
   SuccessfulHttpStatusCode,
   ErrorHttpStatusCode,
   WithoutNever,
+  RouteQuery,
+  RouteHeaders,
+  RouteParams,
+  RouteBody,
 } from "@typesafe-rest/core";
 import { createFetcher } from "./fetcher";
 
@@ -39,51 +43,30 @@ type RouteError<T extends Route> = Prettify<
   }[keyof T["responses"] & ErrorHttpStatusCode]
 >;
 
-type ParseParams<T extends string> =
-  T extends `${string}:${infer Param}/${infer Rest}`
-    ? { [key in Param]: string } & ParseParams<Rest>
-    : T extends `${string}:${infer Param}`
-    ? { [key in Param]: string }
-    : T extends `${string}/${infer Rest}`
-    ? ParseParams<Rest>
-    : never;
-
-type Params<T extends string> = ParseParams<T> extends infer U
-  ? { [key in keyof U]: U[key] }
-  : never;
-
-type Query<T extends GetRoute> = T["query"] extends z.AnyZodObject
-  ? z.infer<T["query"]>
-  : never;
-
-type Headers<T extends Route> = T["headers"] extends z.AnyZodObject
-  ? z.infer<T["headers"]>
-  : never;
-
 type QueryClient<T extends Contract> = {
   [key in keyof T]: T[key] extends GetRoute
     ? {
         useQuery: (
           options: Omit<UseQueryOptions, "queryFn" | "queryKey"> &
             WithoutNever<{
-              params: Params<T[key]["path"]>;
-              query: Query<T[key]>;
-              headers: Headers<T[key]>;
+              params: RouteParams<T[key]>;
+              query: RouteQuery<T[key]>;
+              headers: RouteHeaders<T[key]>;
             }>
         ) => UseQueryResult<RouteResponse<T[key]>, RouteError<T[key]>>;
       }
     : T[key] extends PostRoute | PutRoute | PatchRoute | DeleteRoute
     ? {
         useMutation: (
-          options: Omit<UseMutationOptions, "mutationFn"> &
-            WithoutNever<{
-              params: Params<T[key]["path"]>;
-              headers: Headers<T[key]>;
-            }>
+          options: Omit<UseMutationOptions, "mutationFn">
         ) => UseMutationResult<
           RouteResponse<T[key]>,
           RouteError<T[key]>,
-          z.infer<T[key]["body"]>
+          WithoutNever<{
+            body: RouteBody<T[key]>;
+            params: RouteParams<T[key]>;
+            headers: RouteHeaders<T[key]>;
+          }>
         >;
       }
     : T[key] extends Contract
@@ -129,10 +112,10 @@ function createQueries<T extends Contract>(
           key,
           {
             useMutation: (options) => {
-              const { params, headers } = options as any;
-
               return useMutation({
-                mutationFn: (body) => {
+                mutationFn: (variables) => {
+                  const { body, params, headers } = variables as any;
+
                   return fetcher({
                     route,
                     params,
