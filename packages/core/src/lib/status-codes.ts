@@ -8,26 +8,7 @@ export type SuccessfulHttpStatusCode =
   | 206
   | 207;
 
-export type HttpStatusCode =
-  | 100
-  | 101
-  | 102
-  | 200
-  | 201
-  | 202
-  | 203
-  | 204
-  | 205
-  | 206
-  | 207
-  | 300
-  | 301
-  | 302
-  | 303
-  | 304
-  | 305
-  | 307
-  | 308
+export type ErrorHttpStatusCode =
   | 400
   | 401
   | 402
@@ -44,11 +25,8 @@ export type HttpStatusCode =
   | 413
   | 414
   | 415
-  | 416
   | 417
   | 418
-  | 419
-  | 420
   | 421
   | 422
   | 423
@@ -63,10 +41,8 @@ export type HttpStatusCode =
   | 503
   | 504
   | 505
+  | 506
   | 507
+  | 508
+  | 510
   | 511;
-
-export type ErrorHttpStatusCode = Exclude<
-  HttpStatusCode,
-  SuccessfulHttpStatusCode
->;
