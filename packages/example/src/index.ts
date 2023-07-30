@@ -11,6 +11,9 @@ const contract = createContract({
         postName: z.string(),
       }),
       400: z.string(),
+      404: z.object({
+        test: z.number(),
+      }),
     },
     query: z.object({
       limit: z.string().transform(Number),
@@ -81,7 +84,6 @@ const router = createRouter(contract, createContext, {
   },
   createTodo: async ({
     body: { n },
-    headers,
     ctx: {
       session: { userId },
     },
@@ -107,11 +109,19 @@ const client = createClient(contract, {
   },
 });
 
-const { data: posts } = client.getPosts.useQuery({
+const posts = client.getPosts.useQuery({
   query: { limit: 10 },
   headers: { "x-limit": 10 },
 });
-posts?.postName;
+
+if (posts.isError) {
+  posts.error.status;
+  if (posts.error.status === 404) {
+    posts.error.body.test;
+  }
+} else if (posts.isSuccess) {
+  posts.data.postName;
+}
 
 const { data: todo } = client.getTodo.useQuery({
   params: { id: "1" },

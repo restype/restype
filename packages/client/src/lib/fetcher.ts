@@ -7,7 +7,7 @@ function insertParamsToPath(path: string, params?: any) {
 
   return path
     .replace(/:([^/]+)/g, (_, p) => {
-      return params[p] || "";
+      return params[p] ?? "";
     })
     .replace(/\/\//g, "/");
 }
@@ -28,9 +28,11 @@ export const createFetcher =
   ({
     baseUrl,
     baseHeaders,
+    credentials,
   }: {
     baseUrl?: string;
     baseHeaders?: Record<string, string>;
+    credentials?: RequestCredentials;
   }) =>
   async ({
     route,
@@ -48,15 +50,29 @@ export const createFetcher =
     const path = insertParamsToPath(route.path, params);
     const queryString = convertToQueryString(query);
 
-    const result = await fetch(`${baseUrl}${path}${queryString}`, {
+    const response = await fetch(`${baseUrl}${path}${queryString}`, {
       method: route.method,
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         ...baseHeaders,
         ...headers,
       },
+      credentials,
       body,
     });
 
-    return result.json();
+    if (response.ok) {
+      return await response.json();
+    }
+
+    let errBody;
+
+    try {
+      errBody = await response.json();
+    } catch {}
+
+    throw {
+      status: response.status,
+      body: errBody,
+    };
   };

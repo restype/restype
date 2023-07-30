@@ -7,3 +7,5 @@ type ExcludeKeysWithTypeOf<T, V> = {
 }[keyof T];
 
 export type Without<T, V> = Pick<T, ExcludeKeysWithTypeOf<T, V>>;
+
+export type WithoutNever<T> = Without<T, never>;
