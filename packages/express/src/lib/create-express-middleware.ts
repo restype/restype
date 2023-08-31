@@ -26,13 +26,22 @@ export function createExpressMiddleware<
       route.method !== "PATCH" &&
       route.method !== "DELETE"
     ) {
-      return;
+      const subRouter = router[key];
+
+      if (typeof subRouter !== "object") {
+        throw new Error(`${key} in router must be object`);
+      }
+
+      return createExpressMiddleware(
+        { contract: route, router: subRouter, createContext },
+        app
+      );
     }
 
     const handler = router[key];
 
     if (typeof handler !== "function") {
-      throw new Error("unexpected");
+      throw new Error(`${key} in router must be function`);
     }
 
     const routeMethod = route.method.toLowerCase() as RouteMethods;
@@ -59,14 +68,16 @@ export function createExpressMiddleware<
         ctx: createContext(),
       } as RouteArgs<typeof route, Context>);
 
+      const resultStatus = result.status as number;
+
       try {
-        route.responses[result.status as number].parse(result);
+        route.responses[resultStatus].parse(result);
       } catch (e) {
         res.status(500).json(e);
         return;
       }
 
-      res.status(result.status as number).json(result.body);
+      res.status(resultStatus).json(result.body);
     });
   });
 }
