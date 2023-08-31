@@ -1,0 +1,10 @@
+{
+  "name": "@typesafe-rest/express",
+  "version": "0.1.0",
+  "main": "./src/index.ts",
+  "dependencies": {
+    "@types/express": "4.17.17",
+    "@typesafe-rest/core": "*",
+    "typescript": "5.1.6"
+  }
+}

@@ -8,7 +8,7 @@ import type {
   RouteParams,
 } from "./contract";
 
-type RouteArgs<T extends Route, Context> = {
+export type RouteArgs<T extends Route, Context> = {
   ctx: Context;
   query: RouteQuery<T>;
   headers: RouteHeaders<T>;
@@ -16,7 +16,7 @@ type RouteArgs<T extends Route, Context> = {
   body: RouteBody<T>;
 };
 
-type Router<T extends Contract, Context> = {
+export type Router<T extends Contract, Context> = {
   [keyRoute in keyof T]: T[keyRoute] extends Route
     ? (args: RouteArgs<T[keyRoute], Context>) => PromiseLike<
         {

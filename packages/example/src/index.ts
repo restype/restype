@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createContract, createRouter } from "@typesafe-rest/core";
 import { createClient } from "@typesafe-rest/client";
+import { createExpressMiddleware } from "@typesafe-rest/express";
 
 const contract = createContract({
   test: {
@@ -162,3 +163,5 @@ m.mutate({
   body: { taskName: "asd" },
   params: { projectId: "pid", tid: "tttiiid" },
 });
+
+createExpressMiddleware(router, {} as any);

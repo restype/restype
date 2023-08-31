@@ -1,13 +1,4 @@
 {
-  "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "Node",
-    "target": "ESNext",
-
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  },
+  "extends": "../../tsconfig.json",
   "include": ["./src"]
 }

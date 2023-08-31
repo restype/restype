@@ -34,6 +34,10 @@ export type DeleteRoute = {
 
 export type Route = GetRoute | PostRoute | PutRoute | PatchRoute | DeleteRoute;
 
+export type RouteMethods = Route extends { method: infer V }
+  ? Lowercase<V & string>
+  : never;
+
 export type Contract = { [key: string]: Route | Contract };
 
 export function createContract<const T extends Contract>(contract: T): T {

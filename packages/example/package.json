@@ -4,6 +4,7 @@
   "dependencies": {
     "@typesafe-rest/core": "*",
     "@typesafe-rest/client": "*",
+    "@typesafe-rest/express": "*",
     "typescript": "5.1.6",
     "zod": "3.21.4"
   }
