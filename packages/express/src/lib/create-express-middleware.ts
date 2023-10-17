@@ -3,20 +3,22 @@ import type {
   RouteArgs,
   RouteMethods,
   createRouter,
+  Middleware,
 } from "@typesafe-rest/core";
-import type { Express } from "express";
+import type { Express, Request } from "express";
 
 export function createExpressMiddleware<
   T extends Contract,
-  ContextCreator extends () => any,
+  ContextCreator extends (req: Request) => any,
   Context extends Awaited<ReturnType<ContextCreator>>
 >(
+  app: Express,
   {
     contract,
     router,
     createContext,
   }: ReturnType<typeof createRouter<T, ContextCreator>>,
-  app: Express
+  middleware?: Middleware<T>
 ) {
   Object.entries(contract).map(([key, route]) => {
     if (
@@ -33,8 +35,9 @@ export function createExpressMiddleware<
       }
 
       return createExpressMiddleware(
+        app,
         { contract: route, router: subRouter, createContext },
-        app
+        middleware
       );
     }
 
@@ -45,8 +48,9 @@ export function createExpressMiddleware<
     }
 
     const routeMethod = route.method.toLowerCase() as RouteMethods;
+    const mw = (middleware?.[key] ?? []) as any[];
 
-    app[routeMethod](route.path, async (req, res) => {
+    app[routeMethod](route.path, ...mw, async (req, res) => {
       try {
         route.headers?.parse(req.headers);
 
@@ -60,24 +64,26 @@ export function createExpressMiddleware<
         return;
       }
 
-      const result = await handler({
-        params: req.params,
-        headers: req.headers,
-        query: req.query,
-        body: req.body,
-        ctx: createContext(),
-      } as RouteArgs<typeof route, Context>);
-
-      const resultStatus = result.status as number;
-
       try {
-        route.responses[resultStatus].parse(result);
-      } catch (e) {
-        res.status(500).json(e);
-        return;
-      }
+        const ctx = await createContext(req);
 
-      res.status(resultStatus).json(result.body);
+        const result = await handler({
+          params: req.params,
+          headers: req.headers,
+          query: req.query,
+          body: req.body,
+          ctx,
+        } as RouteArgs<typeof route, Context>);
+
+        const resultStatus = result.status as number;
+
+        route.responses[resultStatus].parse(result);
+
+        res.status(resultStatus).json(result.body);
+      } catch (e) {
+        // TODO: logger?
+        res.sendStatus(500);
+      }
     });
   });
 }

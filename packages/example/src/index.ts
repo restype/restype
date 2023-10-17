@@ -1,7 +1,12 @@
 import { z } from "zod";
-import { createContract, createRouter } from "@typesafe-rest/core";
+import {
+  createContract,
+  createMiddleware,
+  createRouter,
+} from "@typesafe-rest/core";
 import { createClient } from "@typesafe-rest/client";
 import { createExpressMiddleware } from "@typesafe-rest/express";
+import type { Express, Request, Response, RequestHandler } from "express";
 
 const contract = createContract({
   test: {
@@ -60,13 +65,36 @@ const contract = createContract({
   },
 });
 
-const createContext = async () => {
-  const session = { userId: 1 };
+const createContext = async (req: Request) => {
+  let session;
 
-  return {
-    session,
-  };
+  if ("session" in req) {
+    const user = req.session as any;
+    session = { userId: user.id as string };
+  }
+
+  return { session };
 };
+
+const auth: RequestHandler = async (req, res, next) => {
+  // const jwt = req.headers["authorization"]?.split("Bearer ")[1];
+  // const data = verifyJwt(jwt);
+
+  // if (!hasAuth) {
+  //   return res.status(403).json({ message: "Auth required" });
+  // }
+
+  // req.session = data;
+
+  next();
+};
+
+const { middleware } = createMiddleware(contract, {
+  getPosts: [auth],
+  test: {
+    getTest: [auth],
+  },
+});
 
 const router = createRouter(contract, createContext, {
   test: {
@@ -84,14 +112,9 @@ const router = createRouter(contract, createContext, {
 
     return { status: 201 as const, body: { postName: "xxx" } };
   },
-  getTodo: async ({
-    params: { id },
-    ctx: {
-      session: { userId },
-    },
-  }) => {
-    console.log(id);
-    console.log(userId);
+  getTodo: async ({ params, ctx }) => {
+    console.log(params.id);
+    console.log(ctx.session?.userId);
 
     return {
       status: 200 as const,
@@ -100,14 +123,9 @@ const router = createRouter(contract, createContext, {
       },
     };
   },
-  createTodo: async ({
-    body: { n },
-    ctx: {
-      session: { userId },
-    },
-  }) => {
+  createTodo: async ({ body: { n }, ctx }) => {
     console.log(n);
-    console.log(userId);
+    console.log(ctx.session?.userId);
 
     return {
       status: 204 as const,
@@ -164,4 +182,4 @@ m.mutate({
   params: { projectId: "pid", tid: "tttiiid" },
 });
 
-createExpressMiddleware(router, {} as any);
+createExpressMiddleware({} as Express, router, middleware);
