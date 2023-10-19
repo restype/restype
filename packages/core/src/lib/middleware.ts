@@ -1,8 +1,10 @@
 import type { Contract, Route } from "./contract";
 
+export type MW = ((req: any, res: any, next: () => void) => void)[];
+
 type InnerMiddleware<T extends Contract> = {
   [keyRoute in keyof T]: T[keyRoute] extends Route
-    ? ((req: any, res: any, next: () => void) => void)[]
+    ? MW
     : T[keyRoute] extends Contract
     ? InnerMiddleware<T[keyRoute]>
     : never;

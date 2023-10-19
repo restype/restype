@@ -1,9 +1,11 @@
-import type {
-  Contract,
-  RouteArgs,
-  RouteMethods,
-  createRouter,
-  Middleware,
+import {
+  type Contract,
+  type Router,
+  type RouteArgs,
+  type Route,
+  type RouteMethods,
+  type Middleware,
+  isRoute,
 } from "@typesafe-rest/core";
 import type { Express, Request } from "express";
 
@@ -17,17 +19,11 @@ export function createExpressMiddleware<
     contract,
     router,
     createContext,
-  }: ReturnType<typeof createRouter<T, ContextCreator>>,
+  }: { contract: T; router: Router<T, Context>; createContext: ContextCreator },
   middleware?: Middleware<T>
 ) {
-  Object.entries(contract).map(([key, route]) => {
-    if (
-      route.method !== "GET" &&
-      route.method !== "POST" &&
-      route.method !== "PUT" &&
-      route.method !== "PATCH" &&
-      route.method !== "DELETE"
-    ) {
+  Object.entries(contract).map(([key, value]) => {
+    if (!isRoute(value)) {
       const subRouter = router[key];
 
       if (typeof subRouter !== "object") {
@@ -36,11 +32,12 @@ export function createExpressMiddleware<
 
       return createExpressMiddleware(
         app,
-        { contract: route, router: subRouter, createContext },
+        { contract: value, router: subRouter, createContext },
         middleware
       );
     }
 
+    const route = value;
     const handler = router[key];
 
     if (typeof handler !== "function") {
@@ -73,11 +70,11 @@ export function createExpressMiddleware<
           query: req.query,
           body: req.body,
           ctx,
-        } as RouteArgs<typeof route, Context>);
+        } as RouteArgs<Route, Context>);
 
         const resultStatus = result.status as number;
 
-        route.responses[resultStatus].parse(result);
+        route.responses[resultStatus]?.parse(result);
 
         res.status(resultStatus).json(result.body);
       } catch (e) {

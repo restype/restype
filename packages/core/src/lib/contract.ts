@@ -76,3 +76,13 @@ export type RouteParams<T extends Route> = ParseParams<
     ? never
     : U
   : never;
+
+export function isRoute(x: Contract | Route): x is Route {
+  return (
+    x.method === "GET" ||
+    x.method === "POST" ||
+    x.method === "PUT" ||
+    x.method === "PATCH" ||
+    x.method === "DELETE"
+  );
+}
