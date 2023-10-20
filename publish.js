@@ -6,7 +6,9 @@ const packagesDir = path.join(__dirname, "packages");
 
 console.log(`start publishing packages in ${packagesDir}`);
 
-execSync("npm ci");
+// execSync("git clean -dfx .");
+
+// execSync("npm ci");
 
 fs.readdirSync(packagesDir).forEach((packageName) => {
   const packagePath = path.join(packagesDir, packageName);
@@ -15,7 +17,7 @@ fs.readdirSync(packagesDir).forEach((packageName) => {
   buildAndPublish(packagePath);
 });
 
-execSync(`git clean -dfx ${packagesDir}`);
+execSync(`git reset --hard`);
 
 function updatePackageJson(packagePath) {
   const packageJsonPath = path.join(packagePath, "package.json");
