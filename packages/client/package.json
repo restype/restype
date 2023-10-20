@@ -1,7 +1,17 @@
 {
   "name": "@restype/client",
   "version": "0.1.0",
-  "main": "./src/index.ts",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc --declaration --outDir dist"
+  },
   "dependencies": {
     "@restype/core": "*"
   },
