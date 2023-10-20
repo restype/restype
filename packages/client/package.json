@@ -1,10 +1,10 @@
 {
-  "name": "@typesafe-rest/client",
+  "name": "@restype/client",
   "version": "0.1.0",
   "main": "./src/index.ts",
   "dependencies": {
     "@tanstack/react-query": "4.29.25",
-    "@typesafe-rest/core": "*",
+    "@restype/core": "*",
     "typescript": "5.1.6"
   }
 }

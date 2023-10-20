@@ -1,11 +1,7 @@
 import { z } from "zod";
-import {
-  createContract,
-  createMiddleware,
-  createRouter,
-} from "@typesafe-rest/core";
-import { createClient } from "@typesafe-rest/client";
-import { createExpressMiddleware } from "@typesafe-rest/express";
+import { createContract, createMiddleware, createRouter } from "@restype/core";
+import { createClient } from "@restype/client";
+import { createExpressMiddleware } from "@restype/express";
 import type { Express, Request, Response, RequestHandler } from "express";
 
 const contract = createContract({

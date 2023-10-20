@@ -23,7 +23,7 @@ import type {
   RouteHeaders,
   RouteParams,
   RouteBody,
-} from "@typesafe-rest/core";
+} from "@restype/core";
 import { createFetcher } from "./fetcher";
 
 type RouteResponse<T extends Route> = Prettify<

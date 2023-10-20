@@ -1,4 +1,4 @@
-import type { Route } from "@typesafe-rest/core";
+import type { Route } from "@restype/core";
 
 function insertParamsToPath(path: string, params?: any) {
   if (!params) {

@@ -6,7 +6,7 @@ import {
   type RouteMethods,
   type Middleware,
   isRoute,
-} from "@typesafe-rest/core";
+} from "@restype/core";
 import type { Express, Request } from "express";
 
 export function createExpressMiddleware<

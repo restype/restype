@@ -7,7 +7,7 @@ import {
   type RouteHandler,
   type Router,
   type MW,
-} from "@typesafe-rest/core";
+} from "@restype/core";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 export function createNextRouter<

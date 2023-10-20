@@ -1,10 +1,10 @@
 {
-  "name": "@typesafe-rest/example",
+  "name": "@restype/example",
   "version": "0.1.0",
   "dependencies": {
-    "@typesafe-rest/core": "*",
-    "@typesafe-rest/client": "*",
-    "@typesafe-rest/express": "*",
+    "@restype/core": "*",
+    "@restype/client": "*",
+    "@restype/express": "*",
     "typescript": "5.1.6",
     "zod": "3.21.4"
   }

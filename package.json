@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "typesafe-rest",
+  "name": "restype",
   "version": "0.1.0",
   "description": "",
   "workspaces": [
