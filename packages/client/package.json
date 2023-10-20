@@ -1,20 +1,7 @@
 {
   "name": "@restype/client",
   "version": "0.1.0",
-  "types": "./dist/index.d.ts",
-  "main": "./dist/index.js",
-  "files": [
-    "dist"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "scripts": {
-    "build": "tsc --declaration --outDir dist"
-  },
-  "dependencies": {
-    "@restype/core": "*"
-  },
+  "main": "./src/index.ts",
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",
     "typescript": "^5.0.0",

@@ -1,18 +1,7 @@
 {
   "name": "@restype/core",
   "version": "0.1.0",
-  "types": "./src/index.ts",
-  "main": "./dist/index.js",
-  "files": [
-    "dist"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "scripts": {
-    "build": "tsc --declaration --outDir dist"
-  },
-  "dependencies": {},
+  "main": "./src/index.ts",
   "peerDependencies": {
     "typescript": "^5.0.0",
     "zod": "^3.0.0"
