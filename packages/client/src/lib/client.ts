@@ -137,12 +137,9 @@ function createQueries<T extends Contract>(
 
 export function createClient<T extends Contract>(
   contract: T,
-  {
-    baseUrl,
-    baseHeaders,
-  }: { baseUrl?: string; baseHeaders?: Record<string, string> }
+  options: { baseUrl?: string; baseHeaders?: Record<string, string> }
 ): QueryClient<T> {
-  const fetcher = createFetcher({ baseUrl, baseHeaders });
+  const fetcher = createFetcher(options);
 
   return createQueries(contract, fetcher);
 }

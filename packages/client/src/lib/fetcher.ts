@@ -57,8 +57,8 @@ export const createFetcher =
         ...baseHeaders,
         ...headers,
       },
-      credentials,
-      body,
+      ...(credentials && { credentials }),
+      ...(body && { body }),
     });
 
     if (response.ok) {
