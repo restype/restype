@@ -39,7 +39,7 @@ function updatePackageJson(packagePath) {
 
 function buildAndPublish(packagePath) {
   try {
-    execSync("tsc --declaration --outDir dist", { cwd: packagePath });
+    execSync("npx tsc --declaration --outDir dist", { cwd: packagePath });
     execSync("npm publish", { cwd: packagePath });
   } catch (error) {
     console.error(`Error building or publishing in ${packagePath}: ${error}`);

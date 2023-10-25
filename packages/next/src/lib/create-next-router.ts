@@ -74,13 +74,13 @@ export function createNextRouter<
         ctx,
       } as RouteArgs<Route, Context>);
 
-      const resultStatus = result.status;
+      const { status: resultStatus, body: resultBody } = result;
 
-      route.responses[resultStatus]?.parse(result);
+      route.responses[resultStatus]?.parse(resultBody);
 
-      res.status(resultStatus).json(result.body);
-    } catch {
-      res.status(500).end();
+      res.status(resultStatus).json(resultBody);
+    } catch (e) {
+      res.status(500).json(e);
     }
   };
 }
@@ -149,7 +149,7 @@ function getParams(parts: string[], route: Route) {
     const routePathPart = routePath[idx];
 
     if (routePathPart?.startsWith(":")) {
-      result[routePathPart] = part;
+      result[routePathPart.slice(1)] = part;
     }
   });
 
