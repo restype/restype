@@ -1,6 +1,6 @@
 {
   "name": "@restype/client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "./src/index.ts",
   "peerDependencies": {
     "@tanstack/react-query": "^5.0.0",

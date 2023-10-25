@@ -30,6 +30,10 @@ function updatePackageJson(packagePath) {
     access: "public",
   };
 
+  if (!packagePath.includes("/core")) {
+    packageJson.peerDependencies["@restype/core"] = packageJson.version;
+  }
+
   fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
 }
 
