@@ -4,12 +4,12 @@ type RouteDefaults = {
   path: string;
   responses: Record<number, z.ZodTypeAny>;
   headers?: z.AnyZodObject;
+  params?: z.AnyZodObject;
   meta?: unknown;
 };
 
 export type GetRoute = {
   method: "GET";
-  params?: z.AnyZodObject;
   query?: z.AnyZodObject;
 } & RouteDefaults;
 
@@ -70,9 +70,9 @@ type ParseParams<T extends string> =
     ? { [key in Param]: string }
     : {};
 
-export type RouteParams<T extends Route> = ParseParams<
-  T["path"]
-> extends infer U
+export type RouteParams<T extends Route> = T["params"] extends {}
+  ? z.infer<T["params"]>
+  : ParseParams<T["path"]> extends infer U
   ? keyof U extends never
     ? never
     : U

@@ -50,13 +50,20 @@ export function createNextRouter<
       return;
     }
 
+    const { headers, body } = req;
+    let params = getParams(parts, route);
+
     try {
-      route.headers?.parse(req.headers);
+      route.headers?.parse(headers);
+
+      if (route.params) {
+        params = route.params.parse(params);
+      }
 
       if (route.method === "GET") {
-        route.query?.parse(req.query);
+        route.query?.parse(query);
       } else {
-        route.body.parse(req.body);
+        route.body.parse(body);
       }
     } catch (e) {
       res.status(400).json(e);
@@ -67,10 +74,10 @@ export function createNextRouter<
       const ctx = await createContext(req);
 
       const result = await handler({
-        params: getParams(parts, route),
-        headers: req.headers,
-        query: query,
-        body: req.body,
+        params,
+        headers,
+        query,
+        body,
         ctx,
       } as RouteArgs<Route, Context>);
 
