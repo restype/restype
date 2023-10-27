@@ -178,8 +178,8 @@ function runMiddleware(
     const current = mw[index];
 
     if (current) {
-      current(req, res, next);
       index += 1;
+      current(req, res, next);
     }
   };
 

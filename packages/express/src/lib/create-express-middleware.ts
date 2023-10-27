@@ -48,8 +48,14 @@ export function createExpressMiddleware<
     const mw = (middleware?.[key] ?? []) as any[];
 
     app[routeMethod](route.path, ...mw, async (req, res) => {
+      let { params } = req;
+
       try {
         route.headers?.parse(req.headers);
+
+        if (route.params) {
+          params = route.params.parse(params);
+        }
 
         if (route.method === "GET") {
           route.query?.parse(req.query);
@@ -65,7 +71,7 @@ export function createExpressMiddleware<
         const ctx = await createContext(req);
 
         const result = await handler({
-          params: req.params,
+          params,
           headers: req.headers,
           query: req.query,
           body: req.body,
