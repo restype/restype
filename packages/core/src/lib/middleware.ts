@@ -10,7 +10,13 @@ type InnerMiddleware<T extends Contract> = {
     : never;
 };
 
-export type Middleware<T extends Contract> = Partial<InnerMiddleware<T>>;
+type DeepPartial<T> = T extends MW
+  ? T
+  : {
+      [P in keyof T]?: DeepPartial<T[P]>;
+    };
+
+export type Middleware<T extends Contract> = DeepPartial<InnerMiddleware<T>>;
 
 export function createMiddleware<const T extends Contract>(
   contract: T,
