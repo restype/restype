@@ -9,6 +9,7 @@ type RouteDefaults = {
 
 export type GetRoute = {
   method: "GET";
+  params?: z.AnyZodObject;
   query?: z.AnyZodObject;
 } & RouteDefaults;
 
