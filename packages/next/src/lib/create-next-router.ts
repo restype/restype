@@ -15,7 +15,14 @@ export function createNextRouter<
   ContextCreator extends (req: NextApiRequest) => any,
   Context extends Awaited<ReturnType<ContextCreator>>
 >(
-  options: { nextjsApiRouteName: string },
+  options: {
+    nextjsApiRouteName: string;
+    errorHandler?: (
+      error: unknown,
+      req: NextApiRequest,
+      res: NextApiResponse
+    ) => void;
+  },
   {
     contract,
     router,
@@ -25,7 +32,7 @@ export function createNextRouter<
 ) {
   const flatContract = flattenContract(contract, router, middleware);
 
-  return async (req: NextApiRequest, res: NextApiResponse) => {
+  return (req: NextApiRequest, res: NextApiResponse) => {
     const { [options.nextjsApiRouteName]: _parts, ...query } = req.query;
     const parts = Array.isArray(_parts) ? _parts : _parts ? [_parts] : [];
 
@@ -38,57 +45,56 @@ export function createNextRouter<
     });
 
     if (!result) {
-      res.status(404).end();
-      return;
+      return res.status(404).end();
     }
 
     const { route, handler, mw } = result;
 
-    const processed = runMiddleware(mw, req, res);
+    run(mw, req, res, async () => {
+      const { headers, body } = req;
+      let params = getParams(parts, route);
 
-    if (!processed) {
-      return;
-    }
+      try {
+        route.headers?.parse(headers);
 
-    const { headers, body } = req;
-    let params = getParams(parts, route);
+        if (route.params) {
+          params = route.params.parse(params);
+        }
 
-    try {
-      route.headers?.parse(headers);
-
-      if (route.params) {
-        params = route.params.parse(params);
+        if (route.method === "GET") {
+          route.query?.parse(query);
+        } else {
+          route.body.parse(body);
+        }
+      } catch (e) {
+        return res.status(400).json(e);
       }
 
-      if (route.method === "GET") {
-        route.query?.parse(query);
-      } else {
-        route.body.parse(body);
+      try {
+        const ctx = await createContext(req);
+
+        const result = await handler({
+          params,
+          headers,
+          query,
+          body,
+          ctx,
+        } as RouteArgs<Route, Context>);
+
+        const { status: resultStatus, body: resultBody } = result;
+
+        route.responses[resultStatus]?.parse(resultBody);
+
+        res.status(resultStatus).json(resultBody);
+      } catch (e) {
+        if (options.errorHandler) {
+          return options.errorHandler(e, req, res);
+        }
+
+        res.status(500).end();
+        throw e;
       }
-    } catch (e) {
-      res.status(400).json(e);
-      return;
-    }
-
-    try {
-      const ctx = await createContext(req);
-
-      const result = await handler({
-        params,
-        headers,
-        query,
-        body,
-        ctx,
-      } as RouteArgs<Route, Context>);
-
-      const { status: resultStatus, body: resultBody } = result;
-
-      route.responses[resultStatus]?.parse(resultBody);
-
-      res.status(resultStatus).json(resultBody);
-    } catch (e) {
-      res.status(500).json(e);
-    }
+    });
   };
 }
 
@@ -163,27 +169,27 @@ function getParams(parts: string[], route: Route) {
   return result;
 }
 
-function runMiddleware(
+function run(
   mw: MW | undefined,
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
+  callback: () => void
 ) {
   if (!mw || !mw.length) {
-    return true;
+    return callback();
   }
 
   let index = 0;
 
   const next = () => {
-    const current = mw[index];
+    const current = mw[index++];
 
     if (current) {
-      index += 1;
       current(req, res, next);
+    } else {
+      callback();
     }
   };
 
   next();
-
-  return mw.length === index;
 }
