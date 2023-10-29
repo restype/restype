@@ -1,6 +1,6 @@
 {
   "name": "@restype/core",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "main": "./src/index.ts",
   "peerDependencies": {
     "typescript": "^5.0.0",
