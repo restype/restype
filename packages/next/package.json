@@ -1,6 +1,6 @@
 {
   "name": "@restype/next",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "main": "./src/index.ts",
   "peerDependencies": {
     "next": "^12.0.0 || ^13.0.0",
