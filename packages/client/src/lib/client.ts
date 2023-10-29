@@ -97,6 +97,9 @@ function createQueries<T extends Contract>(
                     headers,
                   });
                 },
+                retry: (_, e: { status: number }) => {
+                  return e.status >= 500;
+                },
                 ...options,
               });
             },
