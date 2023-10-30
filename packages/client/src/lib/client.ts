@@ -24,7 +24,7 @@ import type {
   RouteParams,
   RouteBody,
 } from "@restype/core";
-import { createFetcher } from "./fetcher";
+import { createFetcher, RestypeFetchError } from "./fetcher";
 
 type RouteResponse<T extends Route> = Prettify<
   {
@@ -35,12 +35,16 @@ type RouteResponse<T extends Route> = Prettify<
 >;
 
 type RouteError<T extends Route> = Prettify<
-  {
-    [keyResponse in keyof T["responses"] & ErrorHttpStatusCode]: {
-      status: keyResponse;
-      body: z.infer<T["responses"][keyResponse]>;
-    };
-  }[keyof T["responses"] & ErrorHttpStatusCode]
+  | {
+      [keyResponse in keyof T["responses"] & ErrorHttpStatusCode]: {
+        status: keyResponse;
+        body: z.infer<T["responses"][keyResponse]>;
+      };
+    }[keyof T["responses"] & ErrorHttpStatusCode]
+  | {
+      status: number;
+      body: unknown;
+    }
 >;
 
 type QueryClient<T extends Contract> = {
@@ -97,8 +101,12 @@ function createQueries<T extends Contract>(
                     headers,
                   });
                 },
-                retry: (_, e: { status: number }) => {
-                  return e.status >= 500;
+                retry: (_, err) => {
+                  if (err instanceof RestypeFetchError) {
+                    return err.status >= 500;
+                  }
+
+                  return true;
                 },
                 ...options,
               });

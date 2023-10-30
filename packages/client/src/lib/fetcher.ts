@@ -1,29 +1,5 @@
 import type { Route } from "@restype/core";
 
-function insertParamsToPath(path: string, params?: any) {
-  if (!params) {
-    return path;
-  }
-
-  return path
-    .replace(/:([^/]+)/g, (_, p) => {
-      return params[p] ?? "";
-    })
-    .replace(/\/\//g, "/");
-}
-
-function convertToQueryString(queryObject: any) {
-  if (!queryObject) {
-    return "";
-  }
-
-  const queryString = Object.entries(queryObject)
-    .map(([key, value]) => `${key}=${value}`)
-    .join("&");
-
-  return queryString.length ? "?" + queryString : "";
-}
-
 export const createFetcher =
   ({
     baseUrl,
@@ -65,14 +41,37 @@ export const createFetcher =
       return await response.json();
     }
 
-    let errBody;
+    const errBody = await response.json();
 
-    try {
-      errBody = await response.json();
-    } catch {}
-
-    throw {
-      status: response.status,
-      body: errBody,
-    };
+    throw new RestypeFetchError(response.status, errBody);
   };
+
+export class RestypeFetchError extends Error {
+  constructor(public status: number, public body: unknown) {
+    super();
+  }
+}
+
+function insertParamsToPath(path: string, params?: any) {
+  if (!params) {
+    return path;
+  }
+
+  return path
+    .replace(/:([^/]+)/g, (_, p) => {
+      return params[p] ?? "";
+    })
+    .replace(/\/\//g, "/");
+}
+
+function convertToQueryString(queryObject: any) {
+  if (!queryObject) {
+    return "";
+  }
+
+  const queryString = Object.entries(queryObject)
+    .map(([key, value]) => `${key}=${value}`)
+    .join("&");
+
+  return queryString.length ? "?" + queryString : "";
+}
