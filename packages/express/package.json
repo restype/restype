@@ -1,6 +1,6 @@
 {
   "name": "@restype/express",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "main": "./src/index.ts",
   "peerDependencies": {
     "@types/express": "^4.0.0",
