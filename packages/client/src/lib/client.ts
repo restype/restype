@@ -35,16 +35,12 @@ type RouteResponse<T extends Route> = Prettify<
 >;
 
 type RouteError<T extends Route> = Prettify<
-  | {
-      [keyResponse in keyof T["responses"] & ErrorHttpStatusCode]: {
-        status: keyResponse;
-        body: z.infer<T["responses"][keyResponse]>;
-      };
-    }[keyof T["responses"] & ErrorHttpStatusCode]
-  | {
-      status: number;
-      body: unknown;
-    }
+  {
+    [keyResponse in keyof T["responses"] & ErrorHttpStatusCode]: {
+      status: keyResponse;
+      body: z.infer<T["responses"][keyResponse]>;
+    };
+  }[keyof T["responses"] & ErrorHttpStatusCode]
 >;
 
 type QueryClient<T extends Contract> = {
