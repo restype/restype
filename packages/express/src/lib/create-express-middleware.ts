@@ -4,14 +4,14 @@ import {
   type RouteArgs,
   type Route,
   type RouteMethods,
-  type Middleware,
+  type RouteHandler,
   isRoute,
 } from "@restype/core";
-import type { Express, Request } from "express";
+import type { Express, Request, Response } from "express";
 
 export function createExpressMiddleware<
   T extends Contract,
-  ContextCreator extends (req: Request) => any,
+  ContextCreator extends (req: Request, res: Response) => any,
   Context extends Awaited<ReturnType<ContextCreator>>
 >(
   app: Express,
@@ -19,8 +19,7 @@ export function createExpressMiddleware<
     contract,
     router,
     createContext,
-  }: { contract: T; router: Router<T, Context>; createContext: ContextCreator },
-  middleware?: Middleware<T>
+  }: { contract: T; router: Router<T, Context>; createContext: ContextCreator }
 ) {
   Object.entries(contract).map(([key, value]) => {
     if (!isRoute(value)) {
@@ -30,24 +29,23 @@ export function createExpressMiddleware<
         throw new Error(`${key} in router must be object`);
       }
 
-      return createExpressMiddleware(
-        app,
-        { contract: value, router: subRouter, createContext },
-        middleware
-      );
+      return createExpressMiddleware(app, {
+        contract: value,
+        router: subRouter as Router<Contract, Context>,
+        createContext,
+      });
     }
 
     const route = value;
-    const handler = router[key];
+    const handler = router[key] as RouteHandler;
 
     if (typeof handler !== "function") {
       throw new Error(`${key} in router must be function`);
     }
 
     const routeMethod = route.method.toLowerCase() as RouteMethods;
-    const mw = (middleware?.[key] ?? []) as any[];
 
-    app[routeMethod](route.path, ...mw, async (req, res) => {
+    app[routeMethod](route.path, async (req, res) => {
       let { params } = req;
 
       try {
@@ -68,7 +66,7 @@ export function createExpressMiddleware<
       }
 
       try {
-        const ctx = await createContext(req);
+        const ctx = await createContext(req, res);
 
         const result = await handler({
           params,

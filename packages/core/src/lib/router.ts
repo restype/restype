@@ -33,7 +33,7 @@ export type Router<T extends Contract, Context> = {
 
 export function createRouter<
   const T extends Contract,
-  ContextCreator extends (...args: any[]) => any,
+  ContextCreator extends (req: any, res: any) => any,
   Context = Awaited<ReturnType<ContextCreator>>
 >(contract: T, createContext: ContextCreator, router: Router<T, Context>) {
   return { contract, createContext, router };

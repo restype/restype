@@ -1,18 +1,16 @@
 import {
   isRoute,
   type Contract,
-  type Middleware,
   type Route,
   type RouteArgs,
   type RouteHandler,
   type Router,
-  type MW,
 } from "@restype/core";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 export function createNextRouter<
   T extends Contract,
-  ContextCreator extends (req: NextApiRequest) => any,
+  ContextCreator extends (req: NextApiRequest, res: NextApiResponse) => any,
   Context extends Awaited<ReturnType<ContextCreator>>
 >(
   options: {
@@ -27,10 +25,9 @@ export function createNextRouter<
     contract,
     router,
     createContext,
-  }: { contract: T; router: Router<T, Context>; createContext: ContextCreator },
-  middleware?: Middleware<T>
+  }: { contract: T; router: Router<T, Context>; createContext: ContextCreator }
 ) {
-  const flatContract = flattenContract(contract, router, middleware);
+  const flatContract = flattenContract(contract, router);
 
   return async (req: NextApiRequest, res: NextApiResponse) => {
     const { [options.nextjsApiRouteName]: _parts, ...query } = req.query;
@@ -48,9 +45,7 @@ export function createNextRouter<
       return res.status(404).end();
     }
 
-    const { route, handler, mw } = result;
-
-    await runMiddleware(mw, req, res);
+    const { route, handler } = result;
 
     const { headers, body } = req;
     let params = getParams(parts, route);
@@ -67,12 +62,12 @@ export function createNextRouter<
       } else {
         route.body.parse(body);
       }
-    } catch (e) {
-      return res.status(400).json(e);
+    } catch (err) {
+      return res.status(400).json(err);
     }
 
     try {
-      const ctx = await createContext(req);
+      const ctx = await createContext(req, res);
 
       const result = await handler({
         params,
@@ -87,33 +82,27 @@ export function createNextRouter<
       route.responses[resultStatus]?.parse(resultBody);
 
       res.status(resultStatus).json(resultBody);
-    } catch (e) {
+    } catch (err) {
       if (options.errorHandler) {
-        return options.errorHandler(e, req, res);
+        return options.errorHandler(err, req, res);
       }
 
       res.status(500).end();
-      throw e;
+      throw err;
     }
   };
 }
 
-function flattenContract(
-  contract: Contract,
-  router: Router<any, any>,
-  middleware?: Middleware<any>
-) {
+function flattenContract(contract: Contract, router: Router<any, any>) {
   const result: {
     path: string[];
     route: Route;
     handler: RouteHandler;
-    mw: MW | undefined;
   }[] = [];
 
   Object.keys(contract).forEach((key) => {
     const contractValue = contract[key];
     const routerValue = router[key];
-    const middlewareValue = middleware?.[key];
 
     if (!contractValue || !routerValue) {
       throw new Error("unexpected");
@@ -126,28 +115,17 @@ function flattenContract(
         throw new Error("unexpected");
       }
 
-      if (middlewareValue && !Array.isArray(middlewareValue)) {
-        throw new Error("unexpected");
-      }
-
       result.push({
         path: contractValue.path.split("/").slice(1),
         route: contractValue,
         handler,
-        mw: middlewareValue,
       });
     } else {
       if (typeof routerValue !== "object") {
         throw new Error("unexpected");
       }
 
-      if (Array.isArray(middlewareValue)) {
-        throw new Error("unexpected");
-      }
-
-      result.push(
-        ...flattenContract(contractValue, routerValue, middlewareValue)
-      );
+      result.push(...flattenContract(contractValue, routerValue));
     }
   });
 
@@ -167,30 +145,4 @@ function getParams(parts: string[], route: Route) {
   });
 
   return result;
-}
-
-function runMiddleware(
-  mw: MW | undefined,
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (!mw || !mw.length) {
-    return Promise.resolve();
-  }
-
-  return new Promise<void>((resolve) => {
-    let index = 0;
-
-    const next = () => {
-      const current = mw[index++];
-
-      if (current) {
-        current(req, res, next);
-      } else {
-        resolve();
-      }
-    };
-
-    next();
-  });
 }
