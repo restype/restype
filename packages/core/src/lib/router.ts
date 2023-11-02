@@ -45,3 +45,22 @@ export type RouteHandler<T = Router<any, any>[string]> = T extends Router<
 >
   ? never
   : T;
+
+export type RouterWithContext<T extends Contract, Context, ContextCreator> = {
+  router: Router<T, Context>;
+  createContext: ContextCreator;
+};
+
+export type CombinedRouter<T extends Contract, Context, ContextCreator> = {
+  [key in keyof T]: T[key] extends Contract
+    ?
+        | RouterWithContext<T[key], Context, ContextCreator>
+        | CombinedRouter<T[key], Context, ContextCreator>
+    : never;
+};
+
+export function isRouterWithContext(
+  obj: RouterWithContext<any, any, any> | CombinedRouter<any, any, any>
+): obj is RouterWithContext<any, any, any> {
+  return "router" in obj && "createContext" in obj;
+}

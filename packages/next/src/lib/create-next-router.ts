@@ -1,12 +1,13 @@
-import {
-  isRoute,
-  type Contract,
-  type Route,
-  type RouteArgs,
-  type RouteHandler,
-  type Router,
+import type {
+  CombinedRouter,
+  Contract,
+  Route,
+  RouteArgs,
+  Router,
 } from "@restype/core";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { flattenContract } from "./flatten-contract";
+import { flattenCombinedContract } from "./flatten-combined-contract";
 
 export function createNextRouter<
   T extends Contract,
@@ -21,13 +22,27 @@ export function createNextRouter<
       res: NextApiResponse
     ) => void;
   },
-  {
-    contract,
-    router,
-    createContext,
-  }: { contract: T; router: Router<T, Context>; createContext: ContextCreator }
+  args:
+    | {
+        contract: T;
+        router: Router<T, Context>;
+        createContext: ContextCreator;
+      }
+    | {
+        contract: T;
+        combinedRouter: CombinedRouter<T, Context, ContextCreator>;
+      }
 ) {
-  const flatContract = flattenContract(contract, router);
+  const { contract } = args;
+
+  const flatContract =
+    "router" in args
+      ? flattenContract<ContextCreator>(
+          contract,
+          args.router,
+          args.createContext
+        )
+      : flattenCombinedContract<ContextCreator>(contract, args.combinedRouter);
 
   return async (req: NextApiRequest, res: NextApiResponse) => {
     const { [options.nextjsApiRouteName]: _parts, ...query } = req.query;
@@ -45,7 +60,7 @@ export function createNextRouter<
       return res.status(404).end();
     }
 
-    const { route, handler } = result;
+    const { route, handler, createContext } = result;
 
     const { headers, body } = req;
     let params = getParams(parts, route);
@@ -91,45 +106,6 @@ export function createNextRouter<
       throw err;
     }
   };
-}
-
-function flattenContract(contract: Contract, router: Router<any, any>) {
-  const result: {
-    path: string[];
-    route: Route;
-    handler: RouteHandler;
-  }[] = [];
-
-  Object.keys(contract).forEach((key) => {
-    const contractValue = contract[key];
-    const routerValue = router[key];
-
-    if (!contractValue || !routerValue) {
-      throw new Error("unexpected");
-    }
-
-    if (isRoute(contractValue)) {
-      const handler = routerValue;
-
-      if (typeof handler !== "function") {
-        throw new Error("unexpected");
-      }
-
-      result.push({
-        path: contractValue.path.split("/").slice(1),
-        route: contractValue,
-        handler,
-      });
-    } else {
-      if (typeof routerValue !== "object") {
-        throw new Error("unexpected");
-      }
-
-      result.push(...flattenContract(contractValue, routerValue));
-    }
-  });
-
-  return result;
 }
 
 function getParams(parts: string[], route: Route) {
